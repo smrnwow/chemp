@@ -5,7 +5,7 @@ use core::iter::Peekable;
 use core::str::Chars;
 
 pub struct Tokenizer<'a> {
-    table: &'a Table,
+    table: &'a Table<'a>,
     chars: Peekable<Chars<'a>>,
 }
 
