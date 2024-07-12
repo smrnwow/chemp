@@ -1,5 +1,5 @@
-use crate::chemistry::Element;
-use crate::tokens::Symbol;
+use crate::chemistry::ChemicalElement;
+use crate::tokens::Element;
 
 /// A component of compound
 ///
@@ -7,16 +7,16 @@ use crate::tokens::Symbol;
 /// calculated percent of molar mass of the compound
 #[derive(Clone, Debug, PartialEq)]
 pub struct Component {
-    element: Element,
+    chemical_element: ChemicalElement,
     atoms_count: usize,
     mass_percent: f32,
 }
 
 impl Component {
-    pub(crate) fn from(symbol: Symbol) -> Self {
+    pub(crate) fn from(element: Element) -> Self {
         Self {
-            element: symbol.element(),
-            atoms_count: symbol.subscript() as usize,
+            chemical_element: element.chemical_element(),
+            atoms_count: element.subscript() as usize,
             mass_percent: 0.0,
         }
     }
@@ -31,7 +31,7 @@ impl Component {
 
     /// get mass of all atoms of element in compound
     pub fn mass(&self) -> f32 {
-        self.element.atomic_weight() * self.atoms_count as f32
+        self.chemical_element.atomic_weight() * self.atoms_count as f32
     }
 
     /// get percent of component mass to compound mass
@@ -40,8 +40,8 @@ impl Component {
     }
 
     // get chemical element
-    pub fn element(&self) -> Element {
-        self.element
+    pub fn chemical_element(&self) -> ChemicalElement {
+        self.chemical_element
     }
 
     // get atoms count of element in compound
@@ -52,21 +52,30 @@ impl Component {
 
 #[cfg(test)]
 mod tests {
-    use super::{Component, Element, Symbol};
+    use super::{ChemicalElement, Component, Element};
 
     #[test]
     fn mass_calculation() {
-        let mut component = Component::from(Symbol::from("S", 2));
+        let mut component = Component::from(Element::from("S", 2));
 
-        assert_eq!(component.mass(), Element::Sulfur.atomic_weight() * 2.);
+        assert_eq!(
+            component.mass(),
+            ChemicalElement::Sulfur.atomic_weight() * 2.
+        );
 
         component.add_atoms(3);
 
-        assert_eq!(component.mass(), Element::Sulfur.atomic_weight() * 5.);
+        assert_eq!(
+            component.mass(),
+            ChemicalElement::Sulfur.atomic_weight() * 5.
+        );
 
         component.add_atoms(4);
 
-        assert_eq!(component.mass(), Element::Sulfur.atomic_weight() * 9.);
+        assert_eq!(
+            component.mass(),
+            ChemicalElement::Sulfur.atomic_weight() * 9.
+        );
     }
 
     #[test]
@@ -75,7 +84,7 @@ mod tests {
 
         const SULFUR_PERCENTAGE_IN_MAGNESIUM_SULFATE: f32 = 13.007879;
 
-        let mut component = Component::from(Symbol::from("S", 1));
+        let mut component = Component::from(Element::from("S", 1));
 
         component.calculate_mass_percent(MAGNESIUM_SULFATE_MOLAR_MASS);
 

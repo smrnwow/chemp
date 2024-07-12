@@ -1,7 +1,7 @@
-use crate::tokens::{Group, Symbol};
+use crate::tokens::{Element, Group};
 
 #[derive(Debug, PartialEq)]
 pub enum Component {
-    Symbol(Symbol),
+    Element(Element),
     Group(Group),
 }

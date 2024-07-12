@@ -3,7 +3,7 @@
 pub enum Error {
     UnexpectedCharacter(char),
     UnexpectedEOF,
-    UnknownSymbol(String),
+    UnknownElement(String),
 }
 
 impl std::fmt::Display for Error {
@@ -17,8 +17,8 @@ impl std::fmt::Display for Error {
                 write!(f, "unexpected end of formula")
             }
 
-            Self::UnknownSymbol(symbol) => {
-                write!(f, "unknown symbol: {}", symbol)
+            Self::UnknownElement(element) => {
+                write!(f, "unknown element: {}", element)
             }
         }
     }

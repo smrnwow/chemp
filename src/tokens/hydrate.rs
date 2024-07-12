@@ -1,23 +1,23 @@
-use crate::tokens::Symbol;
+use crate::tokens::Element;
 
 #[derive(Debug, PartialEq)]
 pub struct Hydrate {
     coefficient: usize,
-    symbols: Vec<Symbol>,
+    elements: Vec<Element>,
 }
 
 impl Hydrate {
-    pub fn from(coefficient: usize, symbols: Vec<Symbol>) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            coefficient,
-            symbols,
+            coefficient: 1,
+            elements: vec![],
         }
     }
 
-    pub fn new() -> Self {
+    pub(crate) fn from(coefficient: usize, elements: Vec<Element>) -> Self {
         Self {
-            coefficient: 1,
-            symbols: vec![],
+            coefficient,
+            elements,
         }
     }
 
@@ -25,29 +25,29 @@ impl Hydrate {
         self.coefficient = coefficient;
     }
 
-    pub fn add_symbol(&mut self, symbol: Symbol) {
-        self.symbols.push(symbol);
+    pub fn add_element(&mut self, element: Element) {
+        self.elements.push(element);
     }
 
-    pub fn symbols(&self) -> Vec<Symbol> {
-        self.symbols
+    pub fn elements(&self) -> Vec<Element> {
+        self.elements
             .iter()
-            .map(|symbol| Symbol::multiply(symbol, self.coefficient))
+            .map(|element| Element::multiply(element, self.coefficient))
             .collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::tokens::{Hydrate, Symbol};
+    use crate::tokens::{Element, Hydrate};
 
     #[test]
     fn multiplication_coefficient() {
-        let hydrate = Hydrate::from(7, vec![Symbol::from("H", 2), Symbol::from("O", 1)]);
+        let hydrate = Hydrate::from(7, vec![Element::from("H", 2), Element::from("O", 1)]);
 
         assert_eq!(
-            hydrate.symbols(),
-            vec![Symbol::from("H", 14), Symbol::from("O", 7)]
+            hydrate.elements(),
+            vec![Element::from("H", 14), Element::from("O", 7)]
         );
     }
 }

@@ -1,4 +1,4 @@
-use crate::tokens::{Component, Group, Hydrate, Symbol};
+use crate::tokens::{Component, Element, Group, Hydrate};
 
 #[derive(Debug, PartialEq)]
 pub struct Substance {
@@ -8,7 +8,7 @@ pub struct Substance {
 }
 
 impl Substance {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             coefficient: 1,
             composition: vec![],
@@ -16,7 +16,11 @@ impl Substance {
         }
     }
 
-    pub fn from(coefficient: usize, composition: Vec<Component>, hydrate: Option<Hydrate>) -> Self {
+    pub(crate) fn from(
+        coefficient: usize,
+        composition: Vec<Component>,
+        hydrate: Option<Hydrate>,
+    ) -> Self {
         Self {
             coefficient,
             composition,
@@ -24,76 +28,76 @@ impl Substance {
         }
     }
 
-    pub fn add_coefficient(&mut self, coefficient: usize) {
+    pub(crate) fn add_coefficient(&mut self, coefficient: usize) {
         self.coefficient = coefficient;
     }
 
-    pub fn add_symbol(&mut self, symbol: Symbol) {
-        self.composition.push(Component::Symbol(symbol));
+    pub(crate) fn add_element(&mut self, element: Element) {
+        self.composition.push(Component::Element(element));
     }
 
-    pub fn add_group(&mut self, group: Group) {
+    pub(crate) fn add_group(&mut self, group: Group) {
         self.composition.push(Component::Group(group));
     }
 
-    pub fn add_hydrate(&mut self, hydrate: Hydrate) {
+    pub(crate) fn add_hydrate(&mut self, hydrate: Hydrate) {
         self.hydrate = Some(hydrate);
     }
 
-    pub fn symbols(&self) -> Vec<Symbol> {
-        let mut symbols: Vec<Symbol> = Vec::new();
+    pub(crate) fn elements(&self) -> Vec<Element> {
+        let mut elements: Vec<Element> = Vec::new();
 
         self.composition
             .iter()
             .for_each(|component| match component {
-                Component::Symbol(symbol) => {
-                    symbols.push(Symbol::multiply(symbol, self.coefficient));
+                Component::Element(element) => {
+                    elements.push(Element::multiply(element, self.coefficient));
                 }
 
                 Component::Group(group) => {
-                    group.symbols().iter().for_each(|symbol| {
-                        symbols.push(Symbol::multiply(symbol, self.coefficient));
+                    group.elements().iter().for_each(|element| {
+                        elements.push(Element::multiply(element, self.coefficient));
                     });
                 }
             });
 
         if let Some(hydrate) = &self.hydrate {
-            hydrate.symbols().iter().for_each(|symbol| {
-                symbols.push(Symbol::multiply(symbol, self.coefficient));
+            hydrate.elements().iter().for_each(|element| {
+                elements.push(Element::multiply(element, self.coefficient));
             });
         }
 
-        symbols
+        elements
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::tokens::{Component, Hydrate, Substance, Symbol};
+    use crate::tokens::{Component, Element, Hydrate, Substance};
 
     #[test]
     fn coefficient_multiplication() {
         let substance = Substance::from(
             3,
             vec![
-                Component::Symbol(Symbol::from("Mg", 1)),
-                Component::Symbol(Symbol::from("S", 1)),
-                Component::Symbol(Symbol::from("O", 4)),
+                Component::Element(Element::from("Mg", 1)),
+                Component::Element(Element::from("S", 1)),
+                Component::Element(Element::from("O", 4)),
             ],
             Some(Hydrate::from(
                 7,
-                vec![Symbol::from("H", 2), Symbol::from("O", 1)],
+                vec![Element::from("H", 2), Element::from("O", 1)],
             )),
         );
 
         assert_eq!(
-            substance.symbols(),
+            substance.elements(),
             vec![
-                Symbol::from("Mg", 3),
-                Symbol::from("S", 3),
-                Symbol::from("O", 12),
-                Symbol::from("H", 42),
-                Symbol::from("O", 21),
+                Element::from("Mg", 3),
+                Element::from("S", 3),
+                Element::from("O", 12),
+                Element::from("H", 42),
+                Element::from("O", 21),
             ]
         );
     }

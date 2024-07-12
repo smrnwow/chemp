@@ -1,4 +1,4 @@
-use crate::tokens::{Substance, Symbol};
+use crate::tokens::{Element, Substance};
 use crate::Component;
 use std::collections::HashMap;
 
@@ -7,21 +7,27 @@ use std::collections::HashMap;
 /// Contains info about composition and molar mass of compound, defined by formula
 #[derive(Clone, Debug, PartialEq)]
 pub struct Compound {
-    composition: HashMap<&'static str, Component>,
+    composition: Vec<Element>,
+    components: HashMap<&'static str, Component>,
     molar_mass: f32,
 }
 
 impl Compound {
     pub(crate) fn new() -> Self {
         Self {
-            composition: HashMap::new(),
+            composition: Vec::new(),
+            components: HashMap::new(),
             molar_mass: 0.0,
         }
     }
 
-    /// get chemical composition
-    pub fn composition(&self) -> Vec<Component> {
-        self.composition.values().cloned().collect()
+    pub fn composition(&self) -> &Vec<Element> {
+        &self.composition
+    }
+
+    /// list components
+    pub fn components(&self) -> &HashMap<&'static str, Component> {
+        &self.components
     }
 
     /// get molar mass of compound
@@ -29,17 +35,19 @@ impl Compound {
         self.molar_mass
     }
 
-    fn add_symbol(&mut self, symbol: Symbol) {
-        self.composition
-            .entry(&symbol.element().symbol())
-            .and_modify(|component| component.add_atoms(symbol.subscript() as usize))
-            .or_insert(Component::from(symbol));
+    fn add_element(&mut self, element: Element) {
+        self.components
+            .entry(&element.chemical_element().symbol())
+            .and_modify(|component| component.add_atoms(element.subscript() as usize))
+            .or_insert(Component::from(element));
 
-        self.molar_mass += symbol.element().atomic_weight() * symbol.subscript() as f32;
+        self.composition.push(element);
+
+        self.molar_mass += element.chemical_element().atomic_weight() * element.subscript() as f32;
     }
 
     fn calculate_mass_percentage(&mut self) {
-        self.composition
+        self.components
             .values_mut()
             .for_each(|component| component.calculate_mass_percent(self.molar_mass));
     }
@@ -49,8 +57,8 @@ impl From<Substance> for Compound {
     fn from(substance: Substance) -> Self {
         let mut compound = Self::new();
 
-        substance.symbols().iter().for_each(|symbol| {
-            compound.add_symbol(*symbol);
+        substance.elements().iter().for_each(|element| {
+            compound.add_element(*element);
         });
 
         compound.calculate_mass_percentage();
@@ -62,7 +70,7 @@ impl From<Substance> for Compound {
 #[cfg(test)]
 mod tests {
     use super::Compound;
-    use crate::tokens::{Component, Hydrate, Substance, Symbol};
+    use crate::tokens::{Component, Element, Hydrate, Substance};
 
     #[test]
     fn molar_mass_calculation() {
@@ -71,13 +79,13 @@ mod tests {
         let compound = Compound::from(Substance::from(
             1,
             vec![
-                Component::Symbol(Symbol::from("Mg", 1)),
-                Component::Symbol(Symbol::from("S", 1)),
-                Component::Symbol(Symbol::from("O", 4)),
+                Component::Element(Element::from("Mg", 1)),
+                Component::Element(Element::from("S", 1)),
+                Component::Element(Element::from("O", 4)),
             ],
             Some(Hydrate::from(
                 7,
-                vec![Symbol::from("H", 2), Symbol::from("O", 1)],
+                vec![Element::from("H", 2), Element::from("O", 1)],
             )),
         ));
 

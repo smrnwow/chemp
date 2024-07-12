@@ -1,6 +1,6 @@
 /// A chemical element
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
-pub enum Element {
+pub enum ChemicalElement {
     Hydrogen,
     Helium,
     Lithium,
@@ -121,7 +121,7 @@ pub enum Element {
     Oganesson,
 }
 
-impl Element {
+impl ChemicalElement {
     // get chemical element atomic weight
     pub fn atomic_weight(&self) -> f32 {
         match self {

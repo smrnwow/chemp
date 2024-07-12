@@ -1,5 +1,5 @@
-mod element;
+mod chemical_element;
 mod table;
 
-pub use element::Element;
+pub use chemical_element::ChemicalElement;
 pub use table::Table;

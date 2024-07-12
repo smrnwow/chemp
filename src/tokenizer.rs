@@ -1,5 +1,5 @@
 use crate::chemistry::Table;
-use crate::tokens::{Group, Hydrate, Substance, Symbol};
+use crate::tokens::{Element, Group, Hydrate, Substance};
 use crate::Error;
 use core::iter::Peekable;
 use core::str::Chars;
@@ -25,7 +25,7 @@ impl<'a> Tokenizer<'a> {
         while let Some(&char) = self.chars.peek() {
             match char {
                 '0'..='9' if empty => substance.add_coefficient(self.digit()),
-                'A'..='Z' => substance.add_symbol(self.symbol()?),
+                'A'..='Z' => substance.add_element(self.element()?),
                 '(' => substance.add_group(self.group()?),
                 '*' => substance.add_hydrate(self.hydrate()?),
                 _ => return Err(Error::UnexpectedCharacter(char)),
@@ -46,7 +46,7 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(&char) = self.chars.peek() {
             match char {
-                'A'..='Z' => group.add_symbol(self.symbol()?),
+                'A'..='Z' => group.add_element(self.element()?),
                 '(' => group.add_group(self.group()?),
                 ')' => {
                     self.chars.next();
@@ -70,7 +70,7 @@ impl<'a> Tokenizer<'a> {
         while let Some(&char) = self.chars.peek() {
             match char {
                 '0'..='9' if empty => hydrate.add_coefficient(self.digit()),
-                'A'..='Z' => hydrate.add_symbol(self.symbol()?),
+                'A'..='Z' => hydrate.add_element(self.element()?),
                 _ => break,
             }
 
@@ -82,19 +82,19 @@ impl<'a> Tokenizer<'a> {
         Ok(hydrate)
     }
 
-    fn symbol(&mut self) -> Result<Symbol, Error> {
-        let mut symbol = String::new();
+    fn element(&mut self) -> Result<Element, Error> {
+        let mut element = String::new();
 
         while let Some(&char) = self.chars.peek() {
             if char.is_alphabetic() {
-                if char.is_uppercase() && symbol.len() == 0 {
-                    symbol.push(char);
+                if char.is_uppercase() && element.len() == 0 {
+                    element.push(char);
                     self.chars.next();
                     continue;
                 }
 
-                if char.is_lowercase() && symbol.len() > 0 {
-                    symbol.push(char);
+                if char.is_lowercase() && element.len() > 0 {
+                    element.push(char);
                     self.chars.next();
                     continue;
                 }
@@ -103,9 +103,9 @@ impl<'a> Tokenizer<'a> {
             break;
         }
 
-        match self.table.lookup(symbol.as_str()) {
-            Some(symbol) => Ok(Symbol::new(symbol, self.digit())),
-            None => Err(Error::UnknownSymbol(symbol)),
+        match self.table.lookup(&element.as_str()) {
+            Some(chemical_element) => Ok(Element::new(chemical_element, self.digit())),
+            None => Err(Error::UnknownElement(element)),
         }
     }
 
@@ -129,7 +129,7 @@ impl<'a> Tokenizer<'a> {
 mod tests {
     use super::Tokenizer;
     use crate::chemistry::Table;
-    use crate::tokens::{Component, Group, Hydrate, Substance, Symbol};
+    use crate::tokens::{Component, Element, Group, Hydrate, Substance};
 
     #[test]
     fn single_element() {
@@ -137,17 +137,17 @@ mod tests {
 
         assert_eq!(
             Tokenizer::new(&table, "N").tokenize().unwrap(),
-            Substance::from(1, vec![Component::Symbol(Symbol::from("N", 1))], None)
+            Substance::from(1, vec![Component::Element(Element::from("N", 1))], None)
         );
 
         assert_eq!(
             Tokenizer::new(&table, "Mg").tokenize().unwrap(),
-            Substance::from(1, vec![Component::Symbol(Symbol::from("Mg", 1))], None)
+            Substance::from(1, vec![Component::Element(Element::from("Mg", 1))], None)
         );
 
         assert_eq!(
             Tokenizer::new(&table, "Mg3").tokenize().unwrap(),
-            Substance::from(1, vec![Component::Symbol(Symbol::from("Mg", 3))], None)
+            Substance::from(1, vec![Component::Element(Element::from("Mg", 3))], None)
         );
     }
 
@@ -160,9 +160,9 @@ mod tests {
             Substance::from(
                 1,
                 vec![
-                    Component::Symbol(Symbol::from("K", 1)),
-                    Component::Symbol(Symbol::from("N", 1)),
-                    Component::Symbol(Symbol::from("O", 3)),
+                    Component::Element(Element::from("K", 1)),
+                    Component::Element(Element::from("N", 1)),
+                    Component::Element(Element::from("O", 3)),
                 ],
                 None,
             )
@@ -178,11 +178,11 @@ mod tests {
             Substance::from(
                 1,
                 vec![
-                    Component::Symbol(Symbol::from("Ca", 1)),
+                    Component::Element(Element::from("Ca", 1)),
                     Component::Group(Group::from(
                         vec![
-                            Component::Symbol(Symbol::from("N", 1)),
-                            Component::Symbol(Symbol::from("O", 3)),
+                            Component::Element(Element::from("N", 1)),
+                            Component::Element(Element::from("O", 3)),
                         ],
                         2,
                     )),
@@ -198,15 +198,15 @@ mod tests {
             Substance::from(
                 1,
                 vec![
-                    Component::Symbol(Symbol::from("C", 14)),
-                    Component::Symbol(Symbol::from("H", 18)),
-                    Component::Symbol(Symbol::from("N", 3)),
-                    Component::Symbol(Symbol::from("O", 10)),
-                    Component::Symbol(Symbol::from("Fe", 1)),
+                    Component::Element(Element::from("C", 14)),
+                    Component::Element(Element::from("H", 18)),
+                    Component::Element(Element::from("N", 3)),
+                    Component::Element(Element::from("O", 10)),
+                    Component::Element(Element::from("Fe", 1)),
                     Component::Group(Group::from(
                         vec![
-                            Component::Symbol(Symbol::from("N", 1)),
-                            Component::Symbol(Symbol::from("H", 4)),
+                            Component::Element(Element::from("N", 1)),
+                            Component::Element(Element::from("H", 4)),
                         ],
                         2,
                     )),
@@ -227,15 +227,15 @@ mod tests {
             Substance::from(
                 2,
                 vec![
-                    Component::Symbol(Symbol::from("C", 14)),
-                    Component::Symbol(Symbol::from("H", 18)),
-                    Component::Symbol(Symbol::from("N", 3)),
-                    Component::Symbol(Symbol::from("O", 10)),
-                    Component::Symbol(Symbol::from("Fe", 1)),
+                    Component::Element(Element::from("C", 14)),
+                    Component::Element(Element::from("H", 18)),
+                    Component::Element(Element::from("N", 3)),
+                    Component::Element(Element::from("O", 10)),
+                    Component::Element(Element::from("Fe", 1)),
                     Component::Group(Group::from(
                         vec![
-                            Component::Symbol(Symbol::from("N", 1)),
-                            Component::Symbol(Symbol::from("H", 4)),
+                            Component::Element(Element::from("N", 1)),
+                            Component::Element(Element::from("H", 4)),
                         ],
                         2,
                     )),
@@ -254,13 +254,13 @@ mod tests {
             Substance::from(
                 1,
                 vec![
-                    Component::Symbol(Symbol::from("Mg", 1)),
-                    Component::Symbol(Symbol::from("S", 1)),
-                    Component::Symbol(Symbol::from("O", 4)),
+                    Component::Element(Element::from("Mg", 1)),
+                    Component::Element(Element::from("S", 1)),
+                    Component::Element(Element::from("O", 4)),
                 ],
                 Some(Hydrate::from(
                     7,
-                    vec![Symbol::from("H", 2), Symbol::from("O", 1)],
+                    vec![Element::from("H", 2), Element::from("O", 1)],
                 )),
             )
         );

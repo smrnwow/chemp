@@ -5,15 +5,15 @@
 //! - molar mass
 //! - mass percent of each element in composition
 //!
-//! # Usage
+//! ##### Usage
 //!
 //! ```rust
 //! use chemp;
 //!
 //! let compound = chemp::parse("MgSO4*7H2O").unwrap();
 //!
-//! // get chemical composition
-//! compound.composition().iter().for_each(|component| {
+//! // getters for each component of compound
+//! compound.components().values().for_each(|component| {
 //!     // get mass of all atoms of element in compound
 //!     component.mass();
 //!
@@ -24,10 +24,23 @@
 //!     component.atoms_count();
 //!
 //!     // get chemical element symbol
-//!     component.element().symbol();
+//!     component.chemical_element().symbol();
 //!
 //!     // get chemical element atomic weight
-//!     component.element().atomic_weight();
+//!     component.chemical_element().atomic_weight();
+//! });
+//!
+//! // list of elements in order they parsed
+//! // nested groups are flattened
+//! compound.composition().iter().for_each(|element| {
+//!     // get subscript of element
+//!     element.subscript();
+//!
+//!     // get chemical element symbol
+//!     element.chemical_element().symbol();
+//!
+//!     // get chemical element atomic weight
+//!     element.chemical_element().atomic_weight();     
 //! });
 //!
 //! // get molar mass of compound
@@ -36,29 +49,51 @@
 //! println!("compound: {:#?}", compound);
 //!
 //! // compound: Compound {
-//! //      composition: {
-//! //          "Mg": Component {
-//! //              element: Magnesium,
-//! //              atoms_count: 1,
-//! //              mass_percent: 9.861401,
-//! //          },
-//! //          "S": Component {
-//! //              element: Sulfur,
-//! //              atoms_count: 1,
-//! //              mass_percent: 13.007879,
-//! //          },
-//! //          "O": Component {
-//! //              element: Oxygen,
-//! //              atoms_count: 11,
-//! //              mass_percent: 71.40498,
-//! //          },
-//! //          "H": Component {
-//! //              element: Hydrogen,
-//! //              atoms_count: 14,
-//! //              mass_percent: 5.725739,
-//! //          },
-//! //      },
-//! //      molar_mass: 246.466,
+//! //     composition: [
+//! //         Element {
+//! //             chemical_element: Magnesium,
+//! //             subscript: 1,
+//! //         },
+//! //         Element {
+//! //             chemical_element: Sulfur,
+//! //             subscript: 1,
+//! //         },
+//! //         Element {
+//! //             chemical_element: Oxygen,
+//! //             subscript: 4,
+//! //         },
+//! //         Element {
+//! //             chemical_element: Hydrogen,
+//! //             subscript: 14,
+//! //         },
+//! //         Element {
+//! //             chemical_element: Oxygen,
+//! //             subscript: 7,
+//! //         },
+//! //     ],
+//! //     components: {
+//! //         "O": Component {
+//! //             chemical_element: Oxygen,
+//! //             atoms_count: 11,
+//! //             mass_percent: 71.40498,
+//! //         },
+//! //         "S": Component {
+//! //             chemical_element: Sulfur,
+//! //             atoms_count: 1,
+//! //             mass_percent: 13.007879,
+//! //         },
+//! //         "Mg": Component {
+//! //             chemical_element: Magnesium,
+//! //             atoms_count: 1,
+//! //             mass_percent: 9.861401,
+//! //         },
+//! //         "H": Component {
+//! //             chemical_element: Hydrogen,
+//! //             atoms_count: 14,
+//! //             mass_percent: 5.725739,
+//! //         },
+//! //     },
+//! //     molar_mass: 246.466,
 //! // }
 
 mod chemistry;
@@ -67,11 +102,12 @@ mod error;
 mod tokenizer;
 mod tokens;
 
-pub use chemistry::Element;
+pub use chemistry::ChemicalElement;
 pub use compounds::{Component, Compound};
 pub use error::Error;
 use once_cell::sync::Lazy;
 use tokenizer::Tokenizer;
+pub use tokens::Element;
 
 static PERIODIC_TABLE: Lazy<chemistry::Table> = Lazy::new(|| chemistry::Table::new());
 
@@ -87,7 +123,7 @@ pub fn parse<'a>(formula: impl Into<&'a str>) -> Result<Compound, Error> {
 #[cfg(test)]
 mod tests {
     use super::parse;
-    use crate::tokens::{Component, Hydrate, Substance, Symbol};
+    use crate::tokens::{Component, Element, Hydrate, Substance};
     use crate::Compound;
 
     #[test]
@@ -99,13 +135,13 @@ mod tests {
             Compound::from(Substance::from(
                 1,
                 vec![
-                    Component::Symbol(Symbol::from("Mg", 1)),
-                    Component::Symbol(Symbol::from("S", 1)),
-                    Component::Symbol(Symbol::from("O", 4)),
+                    Component::Element(Element::from("Mg", 1)),
+                    Component::Element(Element::from("S", 1)),
+                    Component::Element(Element::from("O", 4)),
                 ],
                 Some(Hydrate::from(
                     7,
-                    vec![Symbol::from("H", 2), Symbol::from("O", 1),]
+                    vec![Element::from("H", 2), Element::from("O", 1),]
                 )),
             ))
         );

@@ -1,4 +1,4 @@
-use crate::chemistry::Element;
+use crate::chemistry::ChemicalElement as Element;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]

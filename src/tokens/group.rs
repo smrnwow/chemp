@@ -1,4 +1,4 @@
-use crate::tokens::{Component, Symbol};
+use crate::tokens::{Component, Element};
 
 #[derive(Debug, PartialEq)]
 pub struct Group {
@@ -7,70 +7,70 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn from(composition: Vec<Component>, subscript: usize) -> Self {
-        Self {
-            composition,
-            subscript,
-        }
-    }
-
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             composition: vec![],
             subscript: 1,
         }
     }
 
-    pub fn add_symbol(&mut self, symbol: Symbol) {
-        self.composition.push(Component::Symbol(symbol));
+    pub(crate) fn from(composition: Vec<Component>, subscript: usize) -> Self {
+        Self {
+            composition,
+            subscript,
+        }
     }
 
-    pub fn add_group(&mut self, group: Group) {
+    pub(crate) fn add_element(&mut self, element: Element) {
+        self.composition.push(Component::Element(element));
+    }
+
+    pub(crate) fn add_group(&mut self, group: Group) {
         self.composition.push(Component::Group(group));
     }
 
-    pub fn add_subscript(&mut self, subscript: usize) {
+    pub(crate) fn add_subscript(&mut self, subscript: usize) {
         self.subscript = subscript;
     }
 
-    pub fn symbols(&self) -> Vec<Symbol> {
-        let mut symbols = vec![];
+    pub(crate) fn elements(&self) -> Vec<Element> {
+        let mut elements = vec![];
 
         self.composition
             .iter()
             .for_each(|component| match component {
-                Component::Symbol(symbol) => {
-                    symbols.push(Symbol::multiply(symbol, self.subscript));
+                Component::Element(element) => {
+                    elements.push(Element::multiply(element, self.subscript));
                 }
 
                 Component::Group(group) => {
-                    group.symbols().iter().for_each(|symbol| {
-                        symbols.push(Symbol::multiply(symbol, self.subscript));
+                    group.elements().iter().for_each(|element| {
+                        elements.push(Element::multiply(element, self.subscript));
                     });
                 }
             });
 
-        symbols
+        elements
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::tokens::{Component, Group, Symbol};
+    use crate::tokens::{Component, Element, Group};
 
     #[test]
     fn subscript_multiplication() {
         let group = Group::from(
             vec![
-                Component::Symbol(Symbol::from("N", 1)),
-                Component::Symbol(Symbol::from("O", 3)),
+                Component::Element(Element::from("N", 1)),
+                Component::Element(Element::from("O", 3)),
             ],
             2,
         );
 
         assert_eq!(
-            group.symbols(),
-            vec![Symbol::from("N", 2), Symbol::from("O", 6)]
+            group.elements(),
+            vec![Element::from("N", 2), Element::from("O", 6)]
         );
     }
 
@@ -78,9 +78,9 @@ mod tests {
     fn nested_group() {
         let group = Group::from(
             vec![
-                Component::Symbol(Symbol::from("N", 1)),
+                Component::Element(Element::from("N", 1)),
                 Component::Group(Group::from(
-                    vec![Component::Symbol(Symbol::from("H", 2))],
+                    vec![Component::Element(Element::from("H", 2))],
                     2,
                 )),
             ],
@@ -88,8 +88,8 @@ mod tests {
         );
 
         assert_eq!(
-            group.symbols(),
-            vec![Symbol::from("N", 2), Symbol::from("H", 8)]
+            group.elements(),
+            vec![Element::from("N", 2), Element::from("H", 8)]
         );
     }
 }
