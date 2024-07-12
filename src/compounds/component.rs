@@ -38,6 +38,16 @@ impl Component {
     pub fn mass_percent(&self) -> f32 {
         self.mass_percent
     }
+
+    // get chemical element
+    pub fn element(&self) -> Element {
+        self.element
+    }
+
+    // get atoms count of element in compound
+    pub fn atoms_count(&self) -> usize {
+        self.atoms_count
+    }
 }
 
 #[cfg(test)]

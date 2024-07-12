@@ -1,3 +1,4 @@
+/// A chemical element
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub enum Element {
     Hydrogen,
@@ -121,6 +122,7 @@ pub enum Element {
 }
 
 impl Element {
+    // get chemical element atomic weight
     pub fn atomic_weight(&self) -> f32 {
         match self {
             Self::Hydrogen => 1.008,
@@ -244,6 +246,7 @@ impl Element {
         }
     }
 
+    // get chemical element symbol
     pub fn symbol(&self) -> &'static str {
         match self {
             Self::Hydrogen => "H",

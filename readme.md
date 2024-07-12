@@ -19,6 +19,15 @@ compound.composition().iter().for_each(|component| {
 
     // get percent of component mass to compound mass
     component.mass_percent();
+
+    // get atoms count of element in compound
+    component.atoms_count();
+
+    // get chemical element symbol
+    component.element().symbol();
+
+    // get chemical element atomic weight
+    component.element().atomic_weight();
 });
 
 // get molar mass of compound

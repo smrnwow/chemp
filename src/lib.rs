@@ -19,6 +19,15 @@
 //!
 //!     // get percent of component mass to compound mass
 //!     component.mass_percent();
+//!
+//!     // get atoms count of element in compound
+//!     component.atoms_count();
+//!
+//!     // get chemical element symbol
+//!     component.element().symbol();
+//!
+//!     // get chemical element atomic weight
+//!     component.element().atomic_weight();
 //! });
 //!
 //! // get molar mass of compound
@@ -58,6 +67,7 @@ mod error;
 mod tokenizer;
 mod tokens;
 
+pub use chemistry::Element;
 pub use compounds::{Component, Compound};
 pub use error::Error;
 use once_cell::sync::Lazy;
@@ -83,8 +93,6 @@ mod tests {
     #[test]
     fn simple() {
         let compound = parse("MgSO4*7H2O").unwrap();
-
-        println!("compound: {:#?}", compound);
 
         assert_eq!(
             compound,

@@ -1,6 +1,6 @@
 [package]
 name = "chemp"
-version = "0.9.1"
+version = "0.9.2"
 edition = "2021"
 description = "chemical formulas parser"
 license = "MIT OR Apache-2.0"
