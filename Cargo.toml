@@ -6,7 +6,7 @@ description = "chemical formulas parser"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/smrnwow/chemp"
 repository = "https://github.com/smrnwow/chemp"
-documentation = ""
+documentation = "https://github.com/smrnwow/chemp"
 
 [dependencies]
 once_cell = "1.19.0"
