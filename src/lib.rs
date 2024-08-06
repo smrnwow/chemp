@@ -99,23 +99,23 @@
 mod chemistry;
 mod compounds;
 mod error;
-mod tokenizer;
+mod parser;
 mod tokens;
 
 pub use chemistry::ChemicalElement;
 pub use compounds::{Component, Compound};
 pub use error::Error;
 use once_cell::sync::Lazy;
-use tokenizer::Tokenizer;
+use parser::Parser;
 pub use tokens::Element;
 
 static PERIODIC_TABLE: Lazy<chemistry::Table> = Lazy::new(|| chemistry::Table::new());
 
 /// A function takes raw formula string and produce compound or error
 pub fn parse<'a>(formula: impl Into<&'a str>) -> Result<Compound, Error> {
-    let mut tokenizer = Tokenizer::new(&PERIODIC_TABLE, formula.into());
+    let mut parser = Parser::new(&PERIODIC_TABLE, formula.into());
 
-    let substance = tokenizer.tokenize()?;
+    let substance = parser.parse()?;
 
     Ok(Compound::from(substance))
 }

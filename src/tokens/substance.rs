@@ -1,4 +1,4 @@
-use crate::tokens::{Component, Element, Group, Hydrate};
+use crate::tokens::{Component, Element, Hydrate};
 
 #[derive(Debug, PartialEq)]
 pub struct Substance {
@@ -32,12 +32,8 @@ impl Substance {
         self.coefficient = coefficient;
     }
 
-    pub(crate) fn add_element(&mut self, element: Element) {
-        self.composition.push(Component::Element(element));
-    }
-
-    pub(crate) fn add_group(&mut self, group: Group) {
-        self.composition.push(Component::Group(group));
+    pub(crate) fn add_component(&mut self, component: Component) {
+        self.composition.push(component);
     }
 
     pub(crate) fn add_hydrate(&mut self, hydrate: Hydrate) {

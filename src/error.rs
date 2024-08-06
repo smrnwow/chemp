@@ -3,7 +3,9 @@
 pub enum Error {
     UnexpectedCharacter(char),
     UnexpectedEOF,
+    UnexpectedEndOfGroup,
     UnknownElement(String),
+    IncorrectHydrate,
 }
 
 impl std::fmt::Display for Error {
@@ -13,12 +15,20 @@ impl std::fmt::Display for Error {
                 write!(f, "unexpected character: {}", character)
             }
 
+            Self::UnexpectedEndOfGroup => {
+                write!(f, "unexpected end of group")
+            }
+
             Self::UnexpectedEOF => {
                 write!(f, "unexpected end of formula")
             }
 
             Self::UnknownElement(element) => {
                 write!(f, "unknown element: {}", element)
+            }
+
+            Self::IncorrectHydrate => {
+                write!(f, "incorrect hydrate")
             }
         }
     }
