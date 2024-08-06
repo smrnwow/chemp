@@ -16,6 +16,7 @@ impl Substance {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn from(
         coefficient: usize,
         composition: Vec<Component>,

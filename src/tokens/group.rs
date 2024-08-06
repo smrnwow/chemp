@@ -14,6 +14,7 @@ impl Group {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn from(composition: Vec<Component>, subscript: usize) -> Self {
         Self {
             composition,

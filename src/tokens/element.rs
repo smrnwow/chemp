@@ -14,6 +14,7 @@ impl Element {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn from(symbol: &str, subscript: usize) -> Self {
         let table = Table::new();
 

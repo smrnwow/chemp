@@ -14,6 +14,7 @@ impl Hydrate {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn from(coefficient: usize, elements: Vec<Element>) -> Self {
         Self {
             coefficient,
