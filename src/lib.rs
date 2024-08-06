@@ -95,6 +95,24 @@
 //! //     },
 //! //     molar_mass: 246.466,
 //! // }
+//! ```
+//!
+//! ##### The parser grammar
+//!
+//! ```
+//! substance = coefficient? component+ hydrate?
+//! component = element | group
+//! group = '(' component+ ')' subscript?
+//! element = symbol subscript?
+//! hydrate = '*' coefficient? water
+//! symbol = uppercased | uppercased lowercased
+//! subscript = digit+
+//! coefficient = digit+
+//! water = 'H2O'
+//! uppercased = {'A'..'Z'}
+//! lowercased = {'a'..'z'}
+//! digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+//! ```
 
 mod chemistry;
 mod compounds;
