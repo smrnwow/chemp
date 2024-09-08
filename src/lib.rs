@@ -30,47 +30,12 @@
 //!     component.chemical_element().atomic_weight();
 //! });
 //!
-//! // list of elements in order they parsed
-//! // nested groups are flattened
-//! compound.composition().iter().for_each(|element| {
-//!     // get subscript of element
-//!     element.subscript();
-//!
-//!     // get chemical element symbol
-//!     element.chemical_element().symbol();
-//!
-//!     // get chemical element atomic weight
-//!     element.chemical_element().atomic_weight();     
-//! });
-//!
 //! // get molar mass of compound
 //! compound.molar_mass();
 //!
 //! println!("compound: {:#?}", compound);
 //!
 //! // compound: Compound {
-//! //     composition: [
-//! //         Element {
-//! //             chemical_element: Magnesium,
-//! //             subscript: 1,
-//! //         },
-//! //         Element {
-//! //             chemical_element: Sulfur,
-//! //             subscript: 1,
-//! //         },
-//! //         Element {
-//! //             chemical_element: Oxygen,
-//! //             subscript: 4,
-//! //         },
-//! //         Element {
-//! //             chemical_element: Hydrogen,
-//! //             subscript: 14,
-//! //         },
-//! //         Element {
-//! //             chemical_element: Oxygen,
-//! //             subscript: 7,
-//! //         },
-//! //     ],
 //! //     components: {
 //! //         "O": Component {
 //! //             chemical_element: Oxygen,
@@ -96,28 +61,12 @@
 //! //     molar_mass: 246.466,
 //! // }
 //! ```
-//!
-//! ##### The parser grammar
-//!
-//! ```
-//! substance = coefficient? component+ hydrate?
-//! component = element | group
-//! group = '(' component+ ')' subscript?
-//! element = symbol subscript?
-//! hydrate = '*' coefficient? water
-//! symbol = uppercased | uppercased lowercased
-//! subscript = digit+
-//! coefficient = digit+
-//! water = 'H2O'
-//! uppercased = {'A'..'Z'}
-//! lowercased = {'a'..'z'}
-//! digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-//! ```
 
 mod chemistry;
 mod compounds;
 mod error;
 mod parser;
+mod tokenizer;
 mod tokens;
 
 pub use chemistry::ChemicalElement;
@@ -157,10 +106,7 @@ mod tests {
                     Component::Element(Element::from("S", 1)),
                     Component::Element(Element::from("O", 4)),
                 ],
-                Some(Hydrate::from(
-                    7,
-                    vec![Element::from("H", 2), Element::from("O", 1),]
-                )),
+                Some(Hydrate::from(7,)),
             ))
         );
     }

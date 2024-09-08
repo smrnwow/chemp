@@ -7,7 +7,6 @@ use std::collections::HashMap;
 /// Contains info about composition and molar mass of compound, defined by formula
 #[derive(Clone, Debug, PartialEq)]
 pub struct Compound {
-    composition: Vec<Element>,
     components: HashMap<&'static str, Component>,
     molar_mass: f32,
 }
@@ -15,14 +14,9 @@ pub struct Compound {
 impl Compound {
     pub(crate) fn new() -> Self {
         Self {
-            composition: Vec::new(),
             components: HashMap::new(),
             molar_mass: 0.0,
         }
-    }
-
-    pub fn composition(&self) -> &Vec<Element> {
-        &self.composition
     }
 
     /// list components
@@ -38,10 +32,8 @@ impl Compound {
     fn add_element(&mut self, element: Element) {
         self.components
             .entry(&element.chemical_element().symbol())
-            .and_modify(|component| component.add_atoms(element.subscript() as usize))
+            .and_modify(|component| component.add_atoms(element.subscript()))
             .or_insert(Component::from(element));
-
-        self.composition.push(element);
 
         self.molar_mass += element.chemical_element().atomic_weight() * element.subscript() as f32;
     }
@@ -83,10 +75,7 @@ mod tests {
                 Component::Element(Element::from("S", 1)),
                 Component::Element(Element::from("O", 4)),
             ],
-            Some(Hydrate::from(
-                7,
-                vec![Element::from("H", 2), Element::from("O", 1)],
-            )),
+            Some(Hydrate::from(7)),
         ));
 
         assert_eq!(compound.molar_mass(), MAGNESIUM_SULFATE_MOLAR_MASS);

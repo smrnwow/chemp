@@ -1,78 +1,72 @@
-use crate::chemistry::{ChemicalElement, Table};
+use crate::chemistry::Table;
+use crate::tokenizer::{Token, Tokenizer};
 use crate::tokens::{Component, Element, Group, Hydrate, Substance};
 use crate::Error;
-use core::iter::Peekable;
-use core::str::Chars;
 
-/// A parser which takes raw formula and produces a substance item from it
-///
-/// It also takes a reference on periodic table to validate symbols of chemical elements found
-///
-/// Grammar:
-/// substance = coefficient? component+ hydrate?
-/// component = element | group
-/// group = '(' component+ ')' subscript?
-/// element = symbol subscript?
-/// hydrate = '*' coefficient? water
-/// symbol = uppercased | uppercased lowercased
-/// subscript = digit+
-/// coefficient = digit+
-/// water = 'H2O'
-/// uppercased = {'A'..'Z'}
-/// lowercased = {'a'..'z'}
-/// digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-///
 pub struct Parser<'a> {
     table: &'a Table<'a>,
-    chars: Peekable<Chars<'a>>,
+    tokenizer: Tokenizer<'a>,
+    lookahead: Option<Token<'a>>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(table: &'a Table, formula: &'a str) -> Self {
         Self {
             table,
-            chars: formula.chars().peekable(),
+            tokenizer: Tokenizer::new(formula),
+            lookahead: None,
         }
     }
 
     pub fn parse(&mut self) -> Result<Substance, Error> {
+        self.lookahead = self.tokenizer.next_token()?;
+
         self.substance()
     }
 
     fn substance(&mut self) -> Result<Substance, Error> {
         let mut substance = Substance::new();
 
-        if let Some(coefficient) = self.digit() {
-            substance.add_coefficient(coefficient);
-        }
+        substance.add_coefficient(self.coefficient()?);
 
         while let Some(component) = self.component()? {
             substance.add_component(component);
         }
 
-        if let Some(hydrate) = self.hydrate()? {
-            substance.add_hydrate(hydrate);
+        if let Some(Token::Asterisk) = self.peek() {
+            substance.add_hydrate(self.hydrate()?);
+        }
+
+        match self.peek() {
+            Some(Token::Asterisk) => {
+                substance.add_hydrate(self.hydrate()?);
+            }
+
+            Some(token) => {
+                return Err(Error::UnexpectedToken(
+                    token.value().to_string(),
+                    self.tokenizer.cursor(),
+                ));
+            }
+
+            None => {}
         }
 
         Ok(substance)
     }
 
     fn component(&mut self) -> Result<Option<Component>, Error> {
-        if let Some(group) = self.group()? {
-            return Ok(Some(Component::Group(group)));
-        }
+        let component = match self.peek() {
+            Some(Token::LParen) => Some(Component::Group(self.group()?)),
+            Some(Token::Symbol(value)) => Some(Component::Element(self.element(value)?)),
+            _ => None,
+        };
 
-        if let Some(element) = self.element()? {
-            return Ok(Some(Component::Element(element)));
-        }
-
-        Ok(None)
+        Ok(component)
     }
 
-    fn group(&mut self) -> Result<Option<Group>, Error> {
-        if let None = self.terminal('(') {
-            return Ok(None);
-        }
+    fn group(&mut self) -> Result<Group, Error> {
+        self.consume(Token::LParen)?;
 
         let mut group = Group::new();
 
@@ -80,133 +74,103 @@ impl<'a> Parser<'a> {
             group.add_component(component);
         }
 
-        if let None = self.terminal(')') {
-            return Err(Error::UnexpectedEndOfGroup);
-        }
+        self.consume(Token::RParen)?;
 
-        if let Some(subscript) = self.digit() {
-            group.add_subscript(subscript);
-        }
+        group.add_subscript(self.subscript()?);
 
-        return Ok(Some(group));
+        return Ok(group);
     }
 
-    fn element(&mut self) -> Result<Option<Element>, Error> {
-        let symbol = match self.symbol() {
-            Some(symbol) => symbol,
-            None => return Ok(None),
-        };
+    fn element(&mut self, value: &'a str) -> Result<Element, Error> {
+        let symbol = self.consume(Token::Symbol(value))?;
 
-        let chemical_element = match self.table.lookup(&symbol.as_str()) {
+        let chemical_element = match self.table.lookup(symbol.value()) {
             Some(chemical_element) => chemical_element,
-            None => return Err(Error::UnknownElement(symbol)),
+            None => {
+                return Err(Error::UnknownElement(
+                    symbol.value().to_string(),
+                    self.tokenizer.cursor(),
+                ))
+            }
         };
 
-        let subscript = match self.digit() {
-            Some(subscript) => subscript,
-            None => 1,
-        };
+        let subscript = self.subscript()?;
 
-        return Ok(Some(Element::new(chemical_element, subscript)));
+        return Ok(Element::new(chemical_element, subscript));
     }
 
-    fn hydrate(&mut self) -> Result<Option<Hydrate>, Error> {
-        if let None = self.terminal('*') {
-            return Ok(None);
-        }
+    fn hydrate(&mut self) -> Result<Hydrate, Error> {
+        self.consume(Token::Asterisk)?;
 
         let mut hydrate = Hydrate::new();
 
-        if let Some(coefficient) = self.digit() {
-            hydrate.add_coefficient(coefficient);
-        }
+        hydrate.add_coefficient(self.coefficient()?);
 
-        if let Some(element) = self.element()? {
-            if element.chemical_element() != ChemicalElement::Hydrogen {
-                return Err(Error::IncorrectHydrate);
-            }
+        self.consume(Token::Symbol("H"))?;
 
-            if element.subscript() != 2 {
-                return Err(Error::IncorrectHydrate);
-            }
+        self.consume(Token::Number("2"))?;
 
-            hydrate.add_element(element);
-        }
+        self.consume(Token::Symbol("O"))?;
 
-        if let Some(element) = self.element()? {
-            if element.chemical_element() != ChemicalElement::Oxygen {
-                return Err(Error::IncorrectHydrate);
-            }
-
-            if element.subscript() != 1 {
-                return Err(Error::IncorrectHydrate);
-            }
-
-            hydrate.add_element(element);
-        }
-
-        Ok(Some(hydrate))
+        Ok(hydrate)
     }
 
-    fn symbol(&mut self) -> Option<String> {
-        let mut symbol = String::new();
+    fn coefficient(&mut self) -> Result<usize, Error> {
+        let coefficient = match self.peek() {
+            Some(Token::Number(value)) => {
+                let number = self.consume(Token::Number(value))?;
 
-        while let Some(&char) = self.chars.peek() {
-            if char.is_alphabetic() {
-                if char.is_uppercase() && symbol.len() == 0 {
-                    symbol.push(char);
-                    self.chars.next();
-                    continue;
+                number.value().parse().unwrap()
+            }
+
+            _ => 1,
+        };
+
+        Ok(coefficient)
+    }
+
+    fn subscript(&mut self) -> Result<usize, Error> {
+        let subscript = match self.peek() {
+            Some(Token::Number(value)) => {
+                let number = self.consume(Token::Number(value))?;
+
+                number.value().parse().unwrap()
+            }
+
+            _ => 1,
+        };
+
+        Ok(subscript)
+    }
+
+    fn peek(&self) -> Option<&Token<'a>> {
+        match &self.lookahead {
+            Some(token) => Some(token),
+            None => None,
+        }
+    }
+
+    fn consume(&mut self, token: Token<'a>) -> Result<Token<'a>, Error> {
+        let result = match &self.lookahead {
+            Some(next_token) => {
+                if *next_token == token {
+                    Ok(*next_token)
+                } else {
+                    Err(Error::UnexpectedToken(
+                        next_token.value().to_string(),
+                        self.tokenizer.cursor(),
+                    ))
                 }
-
-                if char.is_lowercase() && symbol.len() > 0 {
-                    symbol.push(char);
-                    self.chars.next();
-                    continue;
-                }
             }
 
-            break;
+            None => Err(Error::UnexpectedEnd(token.value().to_string())),
+        };
+
+        if result.is_ok() {
+            self.lookahead = self.tokenizer.next_token()?;
         }
 
-        if symbol.len() > 0 {
-            return Some(symbol);
-        } else {
-            return None;
-        }
-    }
-
-    fn digit(&mut self) -> Option<usize> {
-        let mut digit: String = String::new();
-
-        while let Some(char) = self.chars.peek() {
-            if char.is_digit(10) {
-                digit.push(*char);
-                self.chars.next();
-            } else {
-                break;
-            }
-        }
-
-        if digit.len() > 0 {
-            return Some(digit.parse().unwrap());
-        } else {
-            return None;
-        }
-    }
-
-    fn terminal(&mut self, character: char) -> Option<char> {
-        if let Some(&char) = self.chars.peek() {
-            if char != character {
-                return None;
-            }
-
-            self.chars.next();
-
-            return Some(char);
-        } else {
-            return None;
-        }
+        result
     }
 }
 
@@ -217,7 +181,7 @@ mod tests {
     use crate::tokens::{Component, Element, Group, Hydrate, Substance};
 
     #[test]
-    fn single_element() {
+    fn parser_single_element() {
         let table = Table::new();
 
         assert_eq!(
@@ -237,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn multiple_elements() {
+    fn parser_multiple_elements() {
         let table = Table::new();
 
         assert_eq!(
@@ -255,7 +219,7 @@ mod tests {
     }
 
     #[test]
-    fn group() {
+    fn parser_group() {
         let table = Table::new();
 
         assert_eq!(
@@ -300,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn coefficient() {
+    fn parser_coefficient() {
         let table = Table::new();
 
         assert_eq!(
@@ -327,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn hydrate() {
+    fn parser_hydrate() {
         let table = Table::new();
 
         assert_eq!(
@@ -339,10 +303,7 @@ mod tests {
                     Component::Element(Element::from("S", 1)),
                     Component::Element(Element::from("O", 4)),
                 ],
-                Some(Hydrate::from(
-                    7,
-                    vec![Element::from("H", 2), Element::from("O", 1)],
-                )),
+                Some(Hydrate::from(7)),
             )
         );
     }

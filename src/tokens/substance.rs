@@ -81,10 +81,7 @@ mod tests {
                 Component::Element(Element::from("S", 1)),
                 Component::Element(Element::from("O", 4)),
             ],
-            Some(Hydrate::from(
-                7,
-                vec![Element::from("H", 2), Element::from("O", 1)],
-            )),
+            Some(Hydrate::from(7)),
         );
 
         assert_eq!(

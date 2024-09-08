@@ -1,34 +1,32 @@
 /// An enumeration of parsing errors
 #[derive(Debug)]
 pub enum Error {
-    UnexpectedCharacter(char),
-    UnexpectedEOF,
-    UnexpectedEndOfGroup,
-    UnknownElement(String),
-    IncorrectHydrate,
+    UnexpectedToken(String, usize),
+    UnexpectedEnd(String),
+    UnknownElement(String, usize),
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::UnexpectedCharacter(character) => {
-                write!(f, "unexpected character: {}", character)
+            Self::UnexpectedToken(token, position) => {
+                write!(
+                    f,
+                    "unexpected token: \"{}\" at position {}",
+                    token, position
+                )
             }
 
-            Self::UnexpectedEndOfGroup => {
-                write!(f, "unexpected end of group")
+            Self::UnexpectedEnd(expected) => {
+                write!(f, "unexpected end, expected: \"{}\"", expected)
             }
 
-            Self::UnexpectedEOF => {
-                write!(f, "unexpected end of formula")
-            }
-
-            Self::UnknownElement(element) => {
-                write!(f, "unknown element: {}", element)
-            }
-
-            Self::IncorrectHydrate => {
-                write!(f, "incorrect hydrate")
+            Self::UnknownElement(element, position) => {
+                write!(
+                    f,
+                    "unknown element: \"{}\" at position {}",
+                    element, position
+                )
             }
         }
     }

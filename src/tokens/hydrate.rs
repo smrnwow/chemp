@@ -1,3 +1,4 @@
+use crate::chemistry::ChemicalElement;
 use crate::tokens::Element;
 
 #[derive(Debug, PartialEq)]
@@ -10,24 +11,26 @@ impl Hydrate {
     pub(crate) fn new() -> Self {
         Self {
             coefficient: 1,
-            elements: vec![],
+            elements: vec![
+                Element::new(ChemicalElement::Hydrogen, 2),
+                Element::new(ChemicalElement::Oxygen, 1),
+            ],
         }
     }
 
     #[allow(unused)]
-    pub(crate) fn from(coefficient: usize, elements: Vec<Element>) -> Self {
+    pub(crate) fn from(coefficient: usize) -> Self {
         Self {
             coefficient,
-            elements,
+            elements: vec![
+                Element::new(ChemicalElement::Hydrogen, 2),
+                Element::new(ChemicalElement::Oxygen, 1),
+            ],
         }
     }
 
     pub fn add_coefficient(&mut self, coefficient: usize) {
         self.coefficient = coefficient;
-    }
-
-    pub fn add_element(&mut self, element: Element) {
-        self.elements.push(element);
     }
 
     pub fn elements(&self) -> Vec<Element> {
@@ -44,7 +47,7 @@ mod tests {
 
     #[test]
     fn multiplication_coefficient() {
-        let hydrate = Hydrate::from(7, vec![Element::from("H", 2), Element::from("O", 1)]);
+        let hydrate = Hydrate::from(7);
 
         assert_eq!(
             hydrate.elements(),
